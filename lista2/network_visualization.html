@@ -1,0 +1,444 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 500px;
+                 height: 500px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 500px;
+                 height: 500px;
+                 background-color:rgba(200,200,200,0.8);
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": "wilhelmtell", "label": "wilhelmtell", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "isocpp", "label": "isocpp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "smokku", "label": "smokku", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "RandyMcMillan", "label": "RandyMcMillan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ichiyonnana", "label": "ichiyonnana", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jevinskie", "label": "jevinskie", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "botogoske", "label": "botogoske", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yuchen", "label": "yuchen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "joshg253", "label": "joshg253", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mayulu", "label": "mayulu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "studiovc", "label": "studiovc", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "oopschen", "label": "oopschen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "indieknite", "label": "indieknite", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "YuncyYe", "label": "YuncyYe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "fe-dagostino", "label": "fe-dagostino", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "pele1410", "label": "pele1410", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "aleksmesh", "label": "aleksmesh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "fffaraz", "label": "fffaraz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vheidari", "label": "vheidari", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "snoff4", "label": "snoff4", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "pg1992", "label": "pg1992", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "krthkj", "label": "krthkj", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "high-visibility", "label": "high-visibility", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "zpc987", "label": "zpc987", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "baajarmeh", "label": "baajarmeh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "technoveltyco", "label": "technoveltyco", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bobwilmes", "label": "bobwilmes", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jdietz224", "label": "jdietz224", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "il023109", "label": "il023109", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yffq", "label": "yffq", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "nealchau", "label": "nealchau", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Luciferyzl", "label": "Luciferyzl", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "tattwamasi", "label": "tattwamasi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "R1NC", "label": "R1NC", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "pkh0104", "label": "pkh0104", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jan-moeller", "label": "jan-moeller", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "KambizAsadzadeh", "label": "KambizAsadzadeh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "dhmeves", "label": "dhmeves", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "TheRealJokerMan", "label": "TheRealJokerMan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rossjaywill", "label": "rossjaywill", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GiulioPN", "label": "GiulioPN", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "RaphaelPour", "label": "RaphaelPour", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rakendrathapa", "label": "rakendrathapa", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vaananart", "label": "vaananart", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "chear", "label": "chear", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vdudhmal", "label": "vdudhmal", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "900908", "label": "900908", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "fjswhl", "label": "fjswhl", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "zhbi", "label": "zhbi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "infiniteway", "label": "infiniteway", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "angusHeZZ", "label": "angusHeZZ", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "44zb", "label": "44zb", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "dahamilt", "label": "dahamilt", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "edisona", "label": "edisona", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "TugayArslan", "label": "TugayArslan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ericwat", "label": "ericwat", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mmfalcao", "label": "mmfalcao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "lucaskdc", "label": "lucaskdc", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jasantunes", "label": "jasantunes", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Fe0437", "label": "Fe0437", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "amirouche", "label": "amirouche", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Emir-Cesovic", "label": "Emir-Cesovic", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ImAmelie", "label": "ImAmelie", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "BofeiCHEN", "label": "BofeiCHEN", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "wyfsjtu", "label": "wyfsjtu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "SalHe", "label": "SalHe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "dohi", "label": "dohi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Coool", "label": "Coool", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "soheil-soltani", "label": "soheil-soltani", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "cshreyastech", "label": "cshreyastech", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "fluentgcc", "label": "fluentgcc", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "UMUTBAYGUT", "label": "UMUTBAYGUT", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "zhangyy91", "label": "zhangyy91", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "thatvideoshopguy", "label": "thatvideoshopguy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "JasonHu1", "label": "JasonHu1", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "thiagovisk", "label": "thiagovisk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "hgx1991", "label": "hgx1991", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bsdooby", "label": "bsdooby", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GBoshu", "label": "GBoshu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "IGR2014", "label": "IGR2014", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "unanwiwo", "label": "unanwiwo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "kurhula", "label": "kurhula", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jahands", "label": "jahands", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Yang-yongwen", "label": "Yang-yongwen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ant642507com", "label": "ant642507com", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "X-Lucifer", "label": "X-Lucifer", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "zhanglei1949", "label": "zhanglei1949", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "KyleGrains", "label": "KyleGrains", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "augustodamasceno", "label": "augustodamasceno", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Hel00", "label": "Hel00", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "the-moisrex", "label": "the-moisrex", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rajames429", "label": "rajames429", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "feepwang", "label": "feepwang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "shuxiaokai", "label": "shuxiaokai", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "kamiao", "label": "kamiao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "luluman", "label": "luluman", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mbs0221", "label": "mbs0221", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "modulexcite", "label": "modulexcite", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "alansam", "label": "alansam", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "luismauricioac", "label": "luismauricioac", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Parham3679srsr", "label": "Parham3679srsr", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rustyedge", "label": "rustyedge", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "songshinyoung", "label": "songshinyoung", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "aheilesen", "label": "aheilesen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "lu-ym", "label": "lu-ym", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "JamesChristley", "label": "JamesChristley", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "pwn0rz", "label": "pwn0rz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "BrunoProgramming", "label": "BrunoProgramming", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Lmy0217", "label": "Lmy0217", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ray-ng", "label": "ray-ng", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ilKurieita", "label": "ilKurieita", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ugpass", "label": "ugpass", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "zhangzhg0508", "label": "zhangzhg0508", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "SailorLou", "label": "SailorLou", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ionovanton", "label": "ionovanton", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "PeC-KAYO", "label": "PeC-KAYO", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "asali23", "label": "asali23", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mikister", "label": "mikister", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "liberty1997", "label": "liberty1997", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "hundong2", "label": "hundong2", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rezajax", "label": "rezajax", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bhsphd", "label": "bhsphd", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "maxi91", "label": "maxi91", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "henenkur", "label": "henenkur", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "kerolar", "label": "kerolar", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ORC-Lee", "label": "ORC-Lee", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Murplugg", "label": "Murplugg", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "aimuch", "label": "aimuch", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "stephenlang84", "label": "stephenlang84", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ClarePhang", "label": "ClarePhang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "beamiter", "label": "beamiter", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "0TemetNosce0", "label": "0TemetNosce0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vic-torr", "label": "vic-torr", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Renz7", "label": "Renz7", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "tang888", "label": "tang888", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "etavardt", "label": "etavardt", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "SmartAI", "label": "SmartAI", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "HeLiangHIT", "label": "HeLiangHIT", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "zfarbp", "label": "zfarbp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Atahanak", "label": "Atahanak", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "suchaoyong", "label": "suchaoyong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "abdelhakeem", "label": "abdelhakeem", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "HUSTWillHe", "label": "HUSTWillHe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "applicato", "label": "applicato", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ZhuoYitao", "label": "ZhuoYitao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "doytsujin", "label": "doytsujin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Andreo1111", "label": "Andreo1111", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mheriyanto", "label": "mheriyanto", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "TomGarden", "label": "TomGarden", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "simonefinelli", "label": "simonefinelli", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "hlwhite", "label": "hlwhite", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ucar19", "label": "ucar19", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "flay-boy", "label": "flay-boy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ImQhw", "label": "ImQhw", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "LiuErpi", "label": "LiuErpi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "fondxy", "label": "fondxy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "sgupta38", "label": "sgupta38", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "atPalash", "label": "atPalash", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "CCXXXI", "label": "CCXXXI", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "tychodev321", "label": "tychodev321", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Avithohol", "label": "Avithohol", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "nofuns", "label": "nofuns", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "huahaiyu", "label": "huahaiyu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Darkstar130", "label": "Darkstar130", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "AndreyTokmakov", "label": "AndreyTokmakov", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yaoxiuyong", "label": "yaoxiuyong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "wusatosi", "label": "wusatosi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "demidko", "label": "demidko", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "OswaldXia", "label": "OswaldXia", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "liangxianlong", "label": "liangxianlong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "will2055", "label": "will2055", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Serenitysmk", "label": "Serenitysmk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mihirchakma", "label": "mihirchakma", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Delta456", "label": "Delta456", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "nzmgng", "label": "nzmgng", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "TUGOhost", "label": "TUGOhost", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jianjian2017", "label": "jianjian2017", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "malubian906", "label": "malubian906", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "hasmargaryan", "label": "hasmargaryan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bluesfly", "label": "bluesfly", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rpzhu", "label": "rpzhu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "TheCharmingSociopath", "label": "TheCharmingSociopath", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ammarshahin", "label": "ammarshahin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "PrashanthKumar0", "label": "PrashanthKumar0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "iRobot42", "label": "iRobot42", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vitaminncpp", "label": "vitaminncpp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "pasenchenko", "label": "pasenchenko", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ayouroukou", "label": "ayouroukou", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "eemailme", "label": "eemailme", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ahmedtaipei", "label": "ahmedtaipei", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "willianwu", "label": "willianwu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "omercaylan", "label": "omercaylan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "erincercan", "label": "erincercan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mguarin0", "label": "mguarin0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mihirchakmait", "label": "mihirchakmait", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "felbadry", "label": "felbadry", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "droggeljugLM", "label": "droggeljugLM", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mtkfleet", "label": "mtkfleet", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "masx200", "label": "masx200", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Eric-Ceray", "label": "Eric-Ceray", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Clickseo", "label": "Clickseo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "DrPyy", "label": "DrPyy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "glaumar", "label": "glaumar", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Parinjoy", "label": "Parinjoy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "sureshvazrala", "label": "sureshvazrala", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "RolandLemmers", "label": "RolandLemmers", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "martensi1", "label": "martensi1", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "shofiqtest", "label": "shofiqtest", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "aleksandarkoruga", "label": "aleksandarkoruga", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jaideraao", "label": "jaideraao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "aliist", "label": "aliist", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Nahid-Hassan", "label": "Nahid-Hassan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jzdotyang", "label": "jzdotyang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "galliume", "label": "galliume", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "wxingfu", "label": "wxingfu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "KorayMenevse", "label": "KorayMenevse", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Mosklia", "label": "Mosklia", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mrkormaks", "label": "mrkormaks", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "informagico", "label": "informagico", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "emreoztoklu", "label": "emreoztoklu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "fatihatagunn", "label": "fatihatagunn", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "sethome2", "label": "sethome2", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "zEuS0390", "label": "zEuS0390", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "poonamj03", "label": "poonamj03", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "xuuaaannnn", "label": "xuuaaannnn", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "LishaUnfoolish", "label": "LishaUnfoolish", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "iPisces77", "label": "iPisces77", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "chris-iapetus", "label": "chris-iapetus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "betamoojw", "label": "betamoojw", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "oraqlle", "label": "oraqlle", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "BalajiSenege", "label": "BalajiSenege", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "chamip", "label": "chamip", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "golxzn", "label": "golxzn", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "gartac", "label": "gartac", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "AgustinBaffo", "label": "AgustinBaffo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "hanftins", "label": "hanftins", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "freewillbe", "label": "freewillbe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "psotou", "label": "psotou", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "TaoLu52", "label": "TaoLu52", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "VoiciehBy", "label": "VoiciehBy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "hakanceran64", "label": "hakanceran64", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vivianchiong", "label": "vivianchiong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "heureka-shanghai", "label": "heureka-shanghai", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "noahabe", "label": "noahabe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "webstorage119", "label": "webstorage119", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "anwaralicodes", "label": "anwaralicodes", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yanggle-yang", "label": "yanggle-yang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "shimmeryang", "label": "shimmeryang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "love1angel", "label": "love1angel", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "alirezah95", "label": "alirezah95", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ccsuper1024", "label": "ccsuper1024", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Megamegamium", "label": "Megamegamium", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ivaquero", "label": "ivaquero", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yhf98", "label": "yhf98", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mbarrineau", "label": "mbarrineau", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "WarnerChang", "label": "WarnerChang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Corsair-cxs", "label": "Corsair-cxs", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "uzoochogu", "label": "uzoochogu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ngquan0304", "label": "ngquan0304", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "NavidSadat", "label": "NavidSadat", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vlady5lav", "label": "vlady5lav", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rohansiddhu", "label": "rohansiddhu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Ningreka", "label": "Ningreka", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "sohan110111", "label": "sohan110111", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "BlissNathan1305", "label": "BlissNathan1305", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ouyanglujie", "label": "ouyanglujie", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "giyuhwang", "label": "giyuhwang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "evilsharkcpp", "label": "evilsharkcpp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ash1j1", "label": "ash1j1", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Orrmj", "label": "Orrmj", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "samofoke", "label": "samofoke", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "iamVaidh", "label": "iamVaidh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bigLRRH", "label": "bigLRRH", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "nashorstyle", "label": "nashorstyle", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "delta-wing", "label": "delta-wing", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "sperezrioja", "label": "sperezrioja", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "sepehr-gharedaghi", "label": "sepehr-gharedaghi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jeoooo", "label": "jeoooo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Inarizakura", "label": "Inarizakura", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "anyred", "label": "anyred", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Ihtier-0", "label": "Ihtier-0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "alexzanderr", "label": "alexzanderr", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "aidaneastcott", "label": "aidaneastcott", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "AI-Bod", "label": "AI-Bod", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rshn1994", "label": "rshn1994", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yangjiahao265", "label": "yangjiahao265", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "KY-Lin22", "label": "KY-Lin22", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "leoa451", "label": "leoa451", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "cheng-hsiang-chiu", "label": "cheng-hsiang-chiu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "RushinShah22", "label": "RushinShah22", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vnlemanhthanh", "label": "vnlemanhthanh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "EMjoker", "label": "EMjoker", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "kalidasrajendran", "label": "kalidasrajendran", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yairfine", "label": "yairfine", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "QinGuodong1287", "label": "QinGuodong1287", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "EconMaett", "label": "EconMaett", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "CousinMLz", "label": "CousinMLz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "huangdepeng99", "label": "huangdepeng99", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jasony2701", "label": "jasony2701", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "leejoonhun", "label": "leejoonhun", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "onimayowa013", "label": "onimayowa013", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "chuchuroth", "label": "chuchuroth", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "smeyashka", "label": "smeyashka", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Hycity-sta", "label": "Hycity-sta", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "hopkins516", "label": "hopkins516", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "HemanthB03", "label": "HemanthB03", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "LinchpinX", "label": "LinchpinX", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "6d61726b", "label": "6d61726b", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Thilak-KN", "label": "Thilak-KN", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "nickocruzm", "label": "nickocruzm", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "anoopksharma22", "label": "anoopksharma22", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jan-revay", "label": "jan-revay", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "alekssze", "label": "alekssze", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "LuthienTinuvielShouko", "label": "LuthienTinuvielShouko", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "MhmudAbdGhafar", "label": "MhmudAbdGhafar", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "LS-Hower", "label": "LS-Hower", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vytrhlikm", "label": "vytrhlikm", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Nuurik", "label": "Nuurik", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "lyrick17", "label": "lyrick17", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "SamuelxMiao", "label": "SamuelxMiao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rahitashpaul", "label": "rahitashpaul", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mr-dave-lister", "label": "mr-dave-lister", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "zLimbo", "label": "zLimbo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bewflast", "label": "bewflast", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rafidalhaque", "label": "rafidalhaque", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "tolgabp", "label": "tolgabp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Oureyelet", "label": "Oureyelet", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Mohammed4mach", "label": "Mohammed4mach", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "thegoodscientist", "label": "thegoodscientist", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "TanvirApon", "label": "TanvirApon", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Yuri-Santiago", "label": "Yuri-Santiago", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "loser-linker", "label": "loser-linker", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yinloonga", "label": "yinloonga", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "zhuoqun-chen", "label": "zhuoqun-chen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "lizat-i", "label": "lizat-i", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "daleksla", "label": "daleksla", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "falke327", "label": "falke327", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "davcasf", "label": "davcasf", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "KenoChou", "label": "KenoChou", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "david-gmz", "label": "david-gmz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "piedpiper101", "label": "piedpiper101", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "DazeZzz", "label": "DazeZzz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ShelbyWong", "label": "ShelbyWong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "alxrios", "label": "alxrios", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "pumpbumb", "label": "pumpbumb", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "halidaslan", "label": "halidaslan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Cascian08", "label": "Cascian08", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mnfitz-ASU", "label": "mnfitz-ASU", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "birdman113", "label": "birdman113", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "janefreew", "label": "janefreew", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "MichaelAgarkov", "label": "MichaelAgarkov", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "hsouna7", "label": "hsouna7", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "GothicLoli", "label": "GothicLoli", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "hglong16", "label": "hglong16", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "welam73", "label": "welam73", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "helloUmu", "label": "helloUmu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "peravali0812", "label": "peravali0812", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "SzopuCpp", "label": "SzopuCpp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "jacky0115", "label": "jacky0115", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Esteban-Coding", "label": "Esteban-Coding", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Andrei-Paval", "label": "Andrei-Paval", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bitsphere01", "label": "bitsphere01", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ycosystem", "label": "ycosystem", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "XiaoyangLiu1995", "label": "XiaoyangLiu1995", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "riclan", "label": "riclan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mrityunjay-39k", "label": "mrityunjay-39k", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "sunghyouk", "label": "sunghyouk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mtiftikci", "label": "mtiftikci", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "saahu27", "label": "saahu27", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "daitanbui", "label": "daitanbui", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Tarek-Ali2000", "label": "Tarek-Ali2000", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "frabervo", "label": "frabervo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "chenzufei", "label": "chenzufei", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bemarchant", "label": "bemarchant", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mamadjadali", "label": "mamadjadali", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ztao2010", "label": "ztao2010", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "duyu09", "label": "duyu09", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "camdenmcgath", "label": "camdenmcgath", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "FengChenHUSTUM", "label": "FengChenHUSTUM", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Numidia27", "label": "Numidia27", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "nur-azhar", "label": "nur-azhar", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "mrlegohead0x45", "label": "mrlegohead0x45", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Sergioepoi", "label": "Sergioepoi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vioana", "label": "vioana", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "baoivy", "label": "baoivy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "itstarsoft", "label": "itstarsoft", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ikshvaku01", "label": "ikshvaku01", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yb2462", "label": "yb2462", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "timothyyeo7", "label": "timothyyeo7", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "falloutats", "label": "falloutats", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "erdifk", "label": "erdifk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Keron-Dev", "label": "Keron-Dev", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "samkenxstream", "label": "samkenxstream", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ecetinturk", "label": "ecetinturk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Tendacia", "label": "Tendacia", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Smilyf", "label": "Smilyf", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "som-ansh", "label": "som-ansh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Steve4Space", "label": "Steve4Space", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "lovecjiayao", "label": "lovecjiayao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "atif-h", "label": "atif-h", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "skyuzadv", "label": "skyuzadv", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "dptechinfo", "label": "dptechinfo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "flumpus-dev", "label": "flumpus-dev", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "1londonrus", "label": "1londonrus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "YuNkOnG2022", "label": "YuNkOnG2022", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Szym0n96", "label": "Szym0n96", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ahall18-uvm", "label": "ahall18-uvm", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "boatloader", "label": "boatloader", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "IndieMinimalist", "label": "IndieMinimalist", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "n-tranced", "label": "n-tranced", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ABOU-BAKR-BENZ", "label": "ABOU-BAKR-BENZ", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "AlbertoO8", "label": "AlbertoO8", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "amrhonin", "label": "amrhonin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Hemanth3303", "label": "Hemanth3303", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "tarslan-jci", "label": "tarslan-jci", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "edorejel", "label": "edorejel", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "rmanaloto-tastytrade", "label": "rmanaloto-tastytrade", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "allaboutevemirolive", "label": "allaboutevemirolive", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "froggyn0ir", "label": "froggyn0ir", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bddlr11", "label": "bddlr11", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "fejo-git", "label": "fejo-git", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "codespiracy", "label": "codespiracy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "vijaykumarsoni23488", "label": "vijaykumarsoni23488", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "skaiana", "label": "skaiana", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bevyzcodes", "label": "bevyzcodes", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Pikarabbit", "label": "Pikarabbit", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yassineelaissaoui956", "label": "yassineelaissaoui956", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "firefly-yrdsb", "label": "firefly-yrdsb", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "yishak-cs", "label": "yishak-cs", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "master-lame-master", "label": "master-lame-master", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "kamran2malik4", "label": "kamran2malik4", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "SakshamUmate", "label": "SakshamUmate", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Unknown-Stryker", "label": "Unknown-Stryker", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "JusticePage", "label": "JusticePage", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "freddycodes23", "label": "freddycodes23", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "JacobOgle", "label": "JacobOgle", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ctzerz", "label": "ctzerz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "ortanaV2", "label": "ortanaV2", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "xhe-spirent", "label": "xhe-spirent", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "EdouardDevriese", "label": "EdouardDevriese", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "bababermudaa", "label": "bababermudaa", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "albizago", "label": "albizago", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "athn0", "label": "athn0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "madruon", "label": "madruon", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "M-DinhHoangViet", "label": "M-DinhHoangViet", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "LHNam756", "label": "LHNam756", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Hollurose", "label": "Hollurose", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "gssgsjdjdhdhshss", "label": "gssgsjdjdhdhshss", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "voxet1n3", "label": "voxet1n3", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"from": "wilhelmtell", "to": "isocpp", "width": 1}, {"from": "isocpp", "to": "smokku", "width": 1}, {"from": "isocpp", "to": "RandyMcMillan", "width": 1}, {"from": "isocpp", "to": "ichiyonnana", "width": 1}, {"from": "isocpp", "to": "jevinskie", "width": 1}, {"from": "isocpp", "to": "botogoske", "width": 1}, {"from": "isocpp", "to": "yuchen", "width": 1}, {"from": "isocpp", "to": "joshg253", "width": 1}, {"from": "isocpp", "to": "mayulu", "width": 1}, {"from": "isocpp", "to": "studiovc", "width": 1}, {"from": "isocpp", "to": "oopschen", "width": 1}, {"from": "isocpp", "to": "indieknite", "width": 1}, {"from": "isocpp", "to": "YuncyYe", "width": 1}, {"from": "isocpp", "to": "fe-dagostino", "width": 1}, {"from": "isocpp", "to": "pele1410", "width": 1}, {"from": "isocpp", "to": "aleksmesh", "width": 1}, {"from": "isocpp", "to": "fffaraz", "width": 1}, {"from": "isocpp", "to": "vheidari", "width": 1}, {"from": "isocpp", "to": "snoff4", "width": 1}, {"from": "isocpp", "to": "pg1992", "width": 1}, {"from": "isocpp", "to": "krthkj", "width": 1}, {"from": "isocpp", "to": "high-visibility", "width": 1}, {"from": "isocpp", "to": "zpc987", "width": 1}, {"from": "isocpp", "to": "baajarmeh", "width": 1}, {"from": "isocpp", "to": "technoveltyco", "width": 1}, {"from": "isocpp", "to": "bobwilmes", "width": 1}, {"from": "isocpp", "to": "jdietz224", "width": 1}, {"from": "isocpp", "to": "il023109", "width": 1}, {"from": "isocpp", "to": "yffq", "width": 1}, {"from": "isocpp", "to": "nealchau", "width": 1}, {"from": "isocpp", "to": "Luciferyzl", "width": 1}, {"from": "isocpp", "to": "tattwamasi", "width": 1}, {"from": "isocpp", "to": "R1NC", "width": 1}, {"from": "isocpp", "to": "pkh0104", "width": 1}, {"from": "isocpp", "to": "jan-moeller", "width": 1}, {"from": "isocpp", "to": "KambizAsadzadeh", "width": 1}, {"from": "isocpp", "to": "dhmeves", "width": 1}, {"from": "isocpp", "to": "TheRealJokerMan", "width": 1}, {"from": "isocpp", "to": "rossjaywill", "width": 1}, {"from": "isocpp", "to": "GiulioPN", "width": 1}, {"from": "isocpp", "to": "RaphaelPour", "width": 1}, {"from": "isocpp", "to": "rakendrathapa", "width": 1}, {"from": "isocpp", "to": "vaananart", "width": 1}, {"from": "isocpp", "to": "chear", "width": 1}, {"from": "isocpp", "to": "vdudhmal", "width": 1}, {"from": "isocpp", "to": "900908", "width": 1}, {"from": "isocpp", "to": "fjswhl", "width": 1}, {"from": "isocpp", "to": "zhbi", "width": 1}, {"from": "isocpp", "to": "infiniteway", "width": 1}, {"from": "isocpp", "to": "angusHeZZ", "width": 1}, {"from": "isocpp", "to": "44zb", "width": 1}, {"from": "isocpp", "to": "dahamilt", "width": 1}, {"from": "isocpp", "to": "edisona", "width": 1}, {"from": "isocpp", "to": "TugayArslan", "width": 1}, {"from": "isocpp", "to": "ericwat", "width": 1}, {"from": "isocpp", "to": "mmfalcao", "width": 1}, {"from": "isocpp", "to": "lucaskdc", "width": 1}, {"from": "isocpp", "to": "jasantunes", "width": 1}, {"from": "isocpp", "to": "Fe0437", "width": 1}, {"from": "isocpp", "to": "amirouche", "width": 1}, {"from": "isocpp", "to": "Emir-Cesovic", "width": 1}, {"from": "isocpp", "to": "ImAmelie", "width": 1}, {"from": "isocpp", "to": "BofeiCHEN", "width": 1}, {"from": "isocpp", "to": "wyfsjtu", "width": 1}, {"from": "isocpp", "to": "SalHe", "width": 1}, {"from": "isocpp", "to": "dohi", "width": 1}, {"from": "isocpp", "to": "Coool", "width": 1}, {"from": "isocpp", "to": "soheil-soltani", "width": 1}, {"from": "isocpp", "to": "cshreyastech", "width": 1}, {"from": "isocpp", "to": "fluentgcc", "width": 1}, {"from": "isocpp", "to": "UMUTBAYGUT", "width": 1}, {"from": "isocpp", "to": "zhangyy91", "width": 1}, {"from": "isocpp", "to": "thatvideoshopguy", "width": 1}, {"from": "isocpp", "to": "JasonHu1", "width": 1}, {"from": "isocpp", "to": "thiagovisk", "width": 1}, {"from": "isocpp", "to": "hgx1991", "width": 1}, {"from": "isocpp", "to": "bsdooby", "width": 1}, {"from": "isocpp", "to": "GBoshu", "width": 1}, {"from": "isocpp", "to": "IGR2014", "width": 1}, {"from": "isocpp", "to": "unanwiwo", "width": 1}, {"from": "isocpp", "to": "kurhula", "width": 1}, {"from": "isocpp", "to": "jahands", "width": 1}, {"from": "isocpp", "to": "Yang-yongwen", "width": 1}, {"from": "isocpp", "to": "ant642507com", "width": 1}, {"from": "isocpp", "to": "X-Lucifer", "width": 1}, {"from": "isocpp", "to": "zhanglei1949", "width": 1}, {"from": "isocpp", "to": "KyleGrains", "width": 1}, {"from": "isocpp", "to": "augustodamasceno", "width": 1}, {"from": "isocpp", "to": "Hel00", "width": 1}, {"from": "isocpp", "to": "the-moisrex", "width": 1}, {"from": "isocpp", "to": "rajames429", "width": 1}, {"from": "isocpp", "to": "feepwang", "width": 1}, {"from": "isocpp", "to": "shuxiaokai", "width": 1}, {"from": "isocpp", "to": "kamiao", "width": 1}, {"from": "isocpp", "to": "luluman", "width": 1}, {"from": "isocpp", "to": "mbs0221", "width": 1}, {"from": "isocpp", "to": "modulexcite", "width": 1}, {"from": "isocpp", "to": "alansam", "width": 1}, {"from": "isocpp", "to": "luismauricioac", "width": 1}, {"from": "isocpp", "to": "Parham3679srsr", "width": 1}, {"from": "isocpp", "to": "rustyedge", "width": 1}, {"from": "isocpp", "to": "songshinyoung", "width": 1}, {"from": "isocpp", "to": "aheilesen", "width": 1}, {"from": "isocpp", "to": "lu-ym", "width": 1}, {"from": "isocpp", "to": "JamesChristley", "width": 1}, {"from": "isocpp", "to": "pwn0rz", "width": 1}, {"from": "isocpp", "to": "BrunoProgramming", "width": 1}, {"from": "isocpp", "to": "Lmy0217", "width": 1}, {"from": "isocpp", "to": "ray-ng", "width": 1}, {"from": "isocpp", "to": "ilKurieita", "width": 1}, {"from": "isocpp", "to": "ugpass", "width": 1}, {"from": "isocpp", "to": "zhangzhg0508", "width": 1}, {"from": "isocpp", "to": "SailorLou", "width": 1}, {"from": "isocpp", "to": "ionovanton", "width": 1}, {"from": "isocpp", "to": "PeC-KAYO", "width": 1}, {"from": "isocpp", "to": "asali23", "width": 1}, {"from": "isocpp", "to": "mikister", "width": 1}, {"from": "isocpp", "to": "liberty1997", "width": 1}, {"from": "isocpp", "to": "hundong2", "width": 1}, {"from": "isocpp", "to": "rezajax", "width": 1}, {"from": "isocpp", "to": "bhsphd", "width": 1}, {"from": "isocpp", "to": "maxi91", "width": 1}, {"from": "isocpp", "to": "henenkur", "width": 1}, {"from": "isocpp", "to": "kerolar", "width": 1}, {"from": "isocpp", "to": "ORC-Lee", "width": 1}, {"from": "isocpp", "to": "Murplugg", "width": 1}, {"from": "isocpp", "to": "aimuch", "width": 1}, {"from": "isocpp", "to": "stephenlang84", "width": 1}, {"from": "isocpp", "to": "ClarePhang", "width": 1}, {"from": "isocpp", "to": "beamiter", "width": 1}, {"from": "isocpp", "to": "0TemetNosce0", "width": 1}, {"from": "isocpp", "to": "vic-torr", "width": 1}, {"from": "isocpp", "to": "Renz7", "width": 1}, {"from": "isocpp", "to": "tang888", "width": 1}, {"from": "isocpp", "to": "etavardt", "width": 1}, {"from": "isocpp", "to": "SmartAI", "width": 1}, {"from": "isocpp", "to": "HeLiangHIT", "width": 1}, {"from": "isocpp", "to": "zfarbp", "width": 1}, {"from": "isocpp", "to": "Atahanak", "width": 1}, {"from": "isocpp", "to": "suchaoyong", "width": 1}, {"from": "isocpp", "to": "abdelhakeem", "width": 1}, {"from": "isocpp", "to": "HUSTWillHe", "width": 1}, {"from": "isocpp", "to": "applicato", "width": 1}, {"from": "isocpp", "to": "ZhuoYitao", "width": 1}, {"from": "isocpp", "to": "doytsujin", "width": 1}, {"from": "isocpp", "to": "Andreo1111", "width": 1}, {"from": "isocpp", "to": "mheriyanto", "width": 1}, {"from": "isocpp", "to": "TomGarden", "width": 1}, {"from": "isocpp", "to": "simonefinelli", "width": 1}, {"from": "isocpp", "to": "hlwhite", "width": 1}, {"from": "isocpp", "to": "ucar19", "width": 1}, {"from": "isocpp", "to": "flay-boy", "width": 1}, {"from": "isocpp", "to": "ImQhw", "width": 1}, {"from": "isocpp", "to": "LiuErpi", "width": 1}, {"from": "isocpp", "to": "fondxy", "width": 1}, {"from": "isocpp", "to": "sgupta38", "width": 1}, {"from": "isocpp", "to": "atPalash", "width": 1}, {"from": "isocpp", "to": "CCXXXI", "width": 1}, {"from": "isocpp", "to": "tychodev321", "width": 1}, {"from": "isocpp", "to": "Avithohol", "width": 1}, {"from": "isocpp", "to": "nofuns", "width": 1}, {"from": "isocpp", "to": "huahaiyu", "width": 1}, {"from": "isocpp", "to": "Darkstar130", "width": 1}, {"from": "isocpp", "to": "AndreyTokmakov", "width": 1}, {"from": "isocpp", "to": "yaoxiuyong", "width": 1}, {"from": "isocpp", "to": "wusatosi", "width": 1}, {"from": "isocpp", "to": "demidko", "width": 1}, {"from": "isocpp", "to": "OswaldXia", "width": 1}, {"from": "isocpp", "to": "liangxianlong", "width": 1}, {"from": "isocpp", "to": "will2055", "width": 1}, {"from": "isocpp", "to": "Serenitysmk", "width": 1}, {"from": "isocpp", "to": "mihirchakma", "width": 1}, {"from": "isocpp", "to": "Delta456", "width": 1}, {"from": "isocpp", "to": "nzmgng", "width": 1}, {"from": "isocpp", "to": "TUGOhost", "width": 1}, {"from": "isocpp", "to": "jianjian2017", "width": 1}, {"from": "isocpp", "to": "malubian906", "width": 1}, {"from": "isocpp", "to": "hasmargaryan", "width": 1}, {"from": "isocpp", "to": "bluesfly", "width": 1}, {"from": "isocpp", "to": "rpzhu", "width": 1}, {"from": "isocpp", "to": "TheCharmingSociopath", "width": 1}, {"from": "isocpp", "to": "ammarshahin", "width": 1}, {"from": "isocpp", "to": "PrashanthKumar0", "width": 1}, {"from": "isocpp", "to": "iRobot42", "width": 1}, {"from": "isocpp", "to": "vitaminncpp", "width": 1}, {"from": "isocpp", "to": "pasenchenko", "width": 1}, {"from": "isocpp", "to": "ayouroukou", "width": 1}, {"from": "isocpp", "to": "eemailme", "width": 1}, {"from": "isocpp", "to": "ahmedtaipei", "width": 1}, {"from": "isocpp", "to": "willianwu", "width": 1}, {"from": "isocpp", "to": "omercaylan", "width": 1}, {"from": "isocpp", "to": "erincercan", "width": 1}, {"from": "isocpp", "to": "mguarin0", "width": 1}, {"from": "isocpp", "to": "mihirchakmait", "width": 1}, {"from": "isocpp", "to": "felbadry", "width": 1}, {"from": "isocpp", "to": "droggeljugLM", "width": 1}, {"from": "isocpp", "to": "mtkfleet", "width": 1}, {"from": "isocpp", "to": "masx200", "width": 1}, {"from": "isocpp", "to": "Eric-Ceray", "width": 1}, {"from": "isocpp", "to": "Clickseo", "width": 1}, {"from": "isocpp", "to": "DrPyy", "width": 1}, {"from": "isocpp", "to": "glaumar", "width": 1}, {"from": "isocpp", "to": "Parinjoy", "width": 1}, {"from": "isocpp", "to": "sureshvazrala", "width": 1}, {"from": "isocpp", "to": "RolandLemmers", "width": 1}, {"from": "isocpp", "to": "martensi1", "width": 1}, {"from": "isocpp", "to": "shofiqtest", "width": 1}, {"from": "isocpp", "to": "aleksandarkoruga", "width": 1}, {"from": "isocpp", "to": "jaideraao", "width": 1}, {"from": "isocpp", "to": "aliist", "width": 1}, {"from": "isocpp", "to": "Nahid-Hassan", "width": 1}, {"from": "isocpp", "to": "jzdotyang", "width": 1}, {"from": "isocpp", "to": "galliume", "width": 1}, {"from": "isocpp", "to": "wxingfu", "width": 1}, {"from": "isocpp", "to": "KorayMenevse", "width": 1}, {"from": "isocpp", "to": "Mosklia", "width": 1}, {"from": "isocpp", "to": "mrkormaks", "width": 1}, {"from": "isocpp", "to": "informagico", "width": 1}, {"from": "isocpp", "to": "emreoztoklu", "width": 1}, {"from": "isocpp", "to": "fatihatagunn", "width": 1}, {"from": "isocpp", "to": "sethome2", "width": 1}, {"from": "isocpp", "to": "zEuS0390", "width": 1}, {"from": "isocpp", "to": "poonamj03", "width": 1}, {"from": "isocpp", "to": "xuuaaannnn", "width": 1}, {"from": "isocpp", "to": "LishaUnfoolish", "width": 1}, {"from": "isocpp", "to": "iPisces77", "width": 1}, {"from": "isocpp", "to": "chris-iapetus", "width": 1}, {"from": "isocpp", "to": "betamoojw", "width": 1}, {"from": "isocpp", "to": "oraqlle", "width": 1}, {"from": "isocpp", "to": "BalajiSenege", "width": 1}, {"from": "isocpp", "to": "chamip", "width": 1}, {"from": "isocpp", "to": "golxzn", "width": 1}, {"from": "isocpp", "to": "gartac", "width": 1}, {"from": "isocpp", "to": "AgustinBaffo", "width": 1}, {"from": "isocpp", "to": "hanftins", "width": 1}, {"from": "isocpp", "to": "freewillbe", "width": 1}, {"from": "isocpp", "to": "psotou", "width": 1}, {"from": "isocpp", "to": "TaoLu52", "width": 1}, {"from": "isocpp", "to": "VoiciehBy", "width": 1}, {"from": "isocpp", "to": "hakanceran64", "width": 1}, {"from": "isocpp", "to": "vivianchiong", "width": 1}, {"from": "isocpp", "to": "heureka-shanghai", "width": 1}, {"from": "isocpp", "to": "noahabe", "width": 1}, {"from": "isocpp", "to": "webstorage119", "width": 1}, {"from": "isocpp", "to": "anwaralicodes", "width": 1}, {"from": "isocpp", "to": "yanggle-yang", "width": 1}, {"from": "isocpp", "to": "shimmeryang", "width": 1}, {"from": "isocpp", "to": "love1angel", "width": 1}, {"from": "isocpp", "to": "alirezah95", "width": 1}, {"from": "isocpp", "to": "ccsuper1024", "width": 1}, {"from": "isocpp", "to": "Megamegamium", "width": 1}, {"from": "isocpp", "to": "ivaquero", "width": 1}, {"from": "isocpp", "to": "yhf98", "width": 1}, {"from": "isocpp", "to": "mbarrineau", "width": 1}, {"from": "isocpp", "to": "WarnerChang", "width": 1}, {"from": "isocpp", "to": "Corsair-cxs", "width": 1}, {"from": "isocpp", "to": "uzoochogu", "width": 1}, {"from": "isocpp", "to": "ngquan0304", "width": 1}, {"from": "isocpp", "to": "NavidSadat", "width": 1}, {"from": "isocpp", "to": "vlady5lav", "width": 1}, {"from": "isocpp", "to": "rohansiddhu", "width": 1}, {"from": "isocpp", "to": "Ningreka", "width": 1}, {"from": "isocpp", "to": "sohan110111", "width": 1}, {"from": "isocpp", "to": "BlissNathan1305", "width": 1}, {"from": "isocpp", "to": "ouyanglujie", "width": 1}, {"from": "isocpp", "to": "giyuhwang", "width": 1}, {"from": "isocpp", "to": "evilsharkcpp", "width": 1}, {"from": "isocpp", "to": "ash1j1", "width": 1}, {"from": "isocpp", "to": "Orrmj", "width": 1}, {"from": "isocpp", "to": "samofoke", "width": 1}, {"from": "isocpp", "to": "iamVaidh", "width": 1}, {"from": "isocpp", "to": "bigLRRH", "width": 1}, {"from": "isocpp", "to": "nashorstyle", "width": 1}, {"from": "isocpp", "to": "delta-wing", "width": 1}, {"from": "isocpp", "to": "sperezrioja", "width": 1}, {"from": "isocpp", "to": "sepehr-gharedaghi", "width": 1}, {"from": "isocpp", "to": "jeoooo", "width": 1}, {"from": "isocpp", "to": "Inarizakura", "width": 1}, {"from": "isocpp", "to": "anyred", "width": 1}, {"from": "isocpp", "to": "Ihtier-0", "width": 1}, {"from": "isocpp", "to": "alexzanderr", "width": 1}, {"from": "isocpp", "to": "aidaneastcott", "width": 1}, {"from": "isocpp", "to": "AI-Bod", "width": 1}, {"from": "isocpp", "to": "rshn1994", "width": 1}, {"from": "isocpp", "to": "yangjiahao265", "width": 1}, {"from": "isocpp", "to": "KY-Lin22", "width": 1}, {"from": "isocpp", "to": "leoa451", "width": 1}, {"from": "isocpp", "to": "cheng-hsiang-chiu", "width": 1}, {"from": "isocpp", "to": "RushinShah22", "width": 1}, {"from": "isocpp", "to": "vnlemanhthanh", "width": 1}, {"from": "isocpp", "to": "EMjoker", "width": 1}, {"from": "isocpp", "to": "kalidasrajendran", "width": 1}, {"from": "isocpp", "to": "yairfine", "width": 1}, {"from": "isocpp", "to": "QinGuodong1287", "width": 1}, {"from": "isocpp", "to": "EconMaett", "width": 1}, {"from": "isocpp", "to": "CousinMLz", "width": 1}, {"from": "isocpp", "to": "huangdepeng99", "width": 1}, {"from": "isocpp", "to": "jasony2701", "width": 1}, {"from": "isocpp", "to": "leejoonhun", "width": 1}, {"from": "isocpp", "to": "onimayowa013", "width": 1}, {"from": "isocpp", "to": "chuchuroth", "width": 1}, {"from": "isocpp", "to": "smeyashka", "width": 1}, {"from": "isocpp", "to": "Hycity-sta", "width": 1}, {"from": "isocpp", "to": "hopkins516", "width": 1}, {"from": "isocpp", "to": "HemanthB03", "width": 1}, {"from": "isocpp", "to": "LinchpinX", "width": 1}, {"from": "isocpp", "to": "6d61726b", "width": 1}, {"from": "isocpp", "to": "Thilak-KN", "width": 1}, {"from": "isocpp", "to": "nickocruzm", "width": 1}, {"from": "isocpp", "to": "anoopksharma22", "width": 1}, {"from": "isocpp", "to": "jan-revay", "width": 1}, {"from": "isocpp", "to": "alekssze", "width": 1}, {"from": "isocpp", "to": "LuthienTinuvielShouko", "width": 1}, {"from": "isocpp", "to": "MhmudAbdGhafar", "width": 1}, {"from": "isocpp", "to": "LS-Hower", "width": 1}, {"from": "isocpp", "to": "vytrhlikm", "width": 1}, {"from": "isocpp", "to": "Nuurik", "width": 1}, {"from": "isocpp", "to": "lyrick17", "width": 1}, {"from": "isocpp", "to": "SamuelxMiao", "width": 1}, {"from": "isocpp", "to": "rahitashpaul", "width": 1}, {"from": "isocpp", "to": "mr-dave-lister", "width": 1}, {"from": "isocpp", "to": "zLimbo", "width": 1}, {"from": "isocpp", "to": "bewflast", "width": 1}, {"from": "isocpp", "to": "rafidalhaque", "width": 1}, {"from": "isocpp", "to": "tolgabp", "width": 1}, {"from": "isocpp", "to": "Oureyelet", "width": 1}, {"from": "isocpp", "to": "Mohammed4mach", "width": 1}, {"from": "isocpp", "to": "thegoodscientist", "width": 1}, {"from": "isocpp", "to": "TanvirApon", "width": 1}, {"from": "isocpp", "to": "Yuri-Santiago", "width": 1}, {"from": "isocpp", "to": "loser-linker", "width": 1}, {"from": "isocpp", "to": "yinloonga", "width": 1}, {"from": "isocpp", "to": "zhuoqun-chen", "width": 1}, {"from": "isocpp", "to": "lizat-i", "width": 1}, {"from": "isocpp", "to": "daleksla", "width": 1}, {"from": "isocpp", "to": "falke327", "width": 1}, {"from": "isocpp", "to": "davcasf", "width": 1}, {"from": "isocpp", "to": "KenoChou", "width": 1}, {"from": "isocpp", "to": "david-gmz", "width": 1}, {"from": "isocpp", "to": "piedpiper101", "width": 1}, {"from": "isocpp", "to": "DazeZzz", "width": 1}, {"from": "isocpp", "to": "ShelbyWong", "width": 1}, {"from": "isocpp", "to": "alxrios", "width": 1}, {"from": "isocpp", "to": "pumpbumb", "width": 1}, {"from": "isocpp", "to": "halidaslan", "width": 1}, {"from": "isocpp", "to": "Cascian08", "width": 1}, {"from": "isocpp", "to": "mnfitz-ASU", "width": 1}, {"from": "isocpp", "to": "birdman113", "width": 1}, {"from": "isocpp", "to": "janefreew", "width": 1}, {"from": "isocpp", "to": "MichaelAgarkov", "width": 1}, {"from": "isocpp", "to": "hsouna7", "width": 1}, {"from": "isocpp", "to": "GothicLoli", "width": 1}, {"from": "isocpp", "to": "hglong16", "width": 1}, {"from": "isocpp", "to": "welam73", "width": 1}, {"from": "isocpp", "to": "helloUmu", "width": 1}, {"from": "isocpp", "to": "peravali0812", "width": 1}, {"from": "isocpp", "to": "SzopuCpp", "width": 1}, {"from": "isocpp", "to": "jacky0115", "width": 1}, {"from": "isocpp", "to": "Esteban-Coding", "width": 1}, {"from": "isocpp", "to": "Andrei-Paval", "width": 1}, {"from": "isocpp", "to": "bitsphere01", "width": 1}, {"from": "isocpp", "to": "ycosystem", "width": 1}, {"from": "isocpp", "to": "XiaoyangLiu1995", "width": 1}, {"from": "isocpp", "to": "riclan", "width": 1}, {"from": "isocpp", "to": "mrityunjay-39k", "width": 1}, {"from": "isocpp", "to": "sunghyouk", "width": 1}, {"from": "isocpp", "to": "mtiftikci", "width": 1}, {"from": "isocpp", "to": "saahu27", "width": 1}, {"from": "isocpp", "to": "daitanbui", "width": 1}, {"from": "isocpp", "to": "Tarek-Ali2000", "width": 1}, {"from": "isocpp", "to": "frabervo", "width": 1}, {"from": "isocpp", "to": "chenzufei", "width": 1}, {"from": "isocpp", "to": "bemarchant", "width": 1}, {"from": "isocpp", "to": "mamadjadali", "width": 1}, {"from": "isocpp", "to": "ztao2010", "width": 1}, {"from": "isocpp", "to": "duyu09", "width": 1}, {"from": "isocpp", "to": "camdenmcgath", "width": 1}, {"from": "isocpp", "to": "FengChenHUSTUM", "width": 1}, {"from": "isocpp", "to": "Numidia27", "width": 1}, {"from": "isocpp", "to": "nur-azhar", "width": 1}, {"from": "isocpp", "to": "mrlegohead0x45", "width": 1}, {"from": "isocpp", "to": "Sergioepoi", "width": 1}, {"from": "isocpp", "to": "vioana", "width": 1}, {"from": "isocpp", "to": "baoivy", "width": 1}, {"from": "isocpp", "to": "itstarsoft", "width": 1}, {"from": "isocpp", "to": "ikshvaku01", "width": 1}, {"from": "isocpp", "to": "yb2462", "width": 1}, {"from": "isocpp", "to": "timothyyeo7", "width": 1}, {"from": "isocpp", "to": "falloutats", "width": 1}, {"from": "isocpp", "to": "erdifk", "width": 1}, {"from": "isocpp", "to": "Keron-Dev", "width": 1}, {"from": "isocpp", "to": "samkenxstream", "width": 1}, {"from": "isocpp", "to": "ecetinturk", "width": 1}, {"from": "isocpp", "to": "Tendacia", "width": 1}, {"from": "isocpp", "to": "Smilyf", "width": 1}, {"from": "isocpp", "to": "som-ansh", "width": 1}, {"from": "isocpp", "to": "Steve4Space", "width": 1}, {"from": "isocpp", "to": "lovecjiayao", "width": 1}, {"from": "isocpp", "to": "atif-h", "width": 1}, {"from": "isocpp", "to": "skyuzadv", "width": 1}, {"from": "isocpp", "to": "dptechinfo", "width": 1}, {"from": "isocpp", "to": "flumpus-dev", "width": 1}, {"from": "isocpp", "to": "1londonrus", "width": 1}, {"from": "isocpp", "to": "YuNkOnG2022", "width": 1}, {"from": "isocpp", "to": "Szym0n96", "width": 1}, {"from": "isocpp", "to": "ahall18-uvm", "width": 1}, {"from": "isocpp", "to": "boatloader", "width": 1}, {"from": "isocpp", "to": "IndieMinimalist", "width": 1}, {"from": "isocpp", "to": "n-tranced", "width": 1}, {"from": "isocpp", "to": "ABOU-BAKR-BENZ", "width": 1}, {"from": "isocpp", "to": "AlbertoO8", "width": 1}, {"from": "isocpp", "to": "amrhonin", "width": 1}, {"from": "isocpp", "to": "Hemanth3303", "width": 1}, {"from": "isocpp", "to": "tarslan-jci", "width": 1}, {"from": "isocpp", "to": "edorejel", "width": 1}, {"from": "isocpp", "to": "rmanaloto-tastytrade", "width": 1}, {"from": "isocpp", "to": "allaboutevemirolive", "width": 1}, {"from": "isocpp", "to": "froggyn0ir", "width": 1}, {"from": "isocpp", "to": "bddlr11", "width": 1}, {"from": "isocpp", "to": "fejo-git", "width": 1}, {"from": "isocpp", "to": "codespiracy", "width": 1}, {"from": "isocpp", "to": "vijaykumarsoni23488", "width": 1}, {"from": "isocpp", "to": "skaiana", "width": 1}, {"from": "isocpp", "to": "bevyzcodes", "width": 1}, {"from": "isocpp", "to": "Pikarabbit", "width": 1}, {"from": "isocpp", "to": "yassineelaissaoui956", "width": 1}, {"from": "isocpp", "to": "firefly-yrdsb", "width": 1}, {"from": "isocpp", "to": "yishak-cs", "width": 1}, {"from": "isocpp", "to": "master-lame-master", "width": 1}, {"from": "isocpp", "to": "kamran2malik4", "width": 1}, {"from": "isocpp", "to": "SakshamUmate", "width": 1}, {"from": "isocpp", "to": "Unknown-Stryker", "width": 1}, {"from": "isocpp", "to": "JusticePage", "width": 1}, {"from": "isocpp", "to": "freddycodes23", "width": 1}, {"from": "isocpp", "to": "JacobOgle", "width": 1}, {"from": "isocpp", "to": "ctzerz", "width": 1}, {"from": "isocpp", "to": "ortanaV2", "width": 1}, {"from": "isocpp", "to": "xhe-spirent", "width": 1}, {"from": "isocpp", "to": "EdouardDevriese", "width": 1}, {"from": "isocpp", "to": "bababermudaa", "width": 1}, {"from": "isocpp", "to": "albizago", "width": 1}, {"from": "isocpp", "to": "athn0", "width": 1}, {"from": "isocpp", "to": "madruon", "width": 1}, {"from": "isocpp", "to": "M-DinhHoangViet", "width": 1}, {"from": "isocpp", "to": "LHNam756", "width": 1}, {"from": "isocpp", "to": "Hollurose", "width": 1}, {"from": "isocpp", "to": "gssgsjdjdhdhshss", "width": 1}, {"from": "isocpp", "to": "voxet1n3", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          document.getElementById('loadingBar').removeAttribute("style");
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+                          document.getElementById('loadingBar').style.opacity = 0;
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

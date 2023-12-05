@@ -1,0 +1,444 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 100%;
+                 height: 600px;
+                 background-color:rgba(200,200,200,0.8);
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": 0, "label": "wilhelmtell", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 1, "label": "smokku", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 2, "label": "RandyMcMillan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 3, "label": "ichiyonnana", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 4, "label": "jevinskie", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 5, "label": "botogoske", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 6, "label": "yuchen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 7, "label": "joshg253", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 8, "label": "mayulu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 9, "label": "studiovc", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 10, "label": "oopschen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 11, "label": "indieknite", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 12, "label": "YuncyYe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 13, "label": "fe-dagostino", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 14, "label": "pele1410", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 15, "label": "aleksmesh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 16, "label": "fffaraz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 17, "label": "vheidari", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 18, "label": "snoff4", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 19, "label": "pg1992", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 20, "label": "krthkj", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 21, "label": "high-visibility", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 22, "label": "zpc987", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 23, "label": "baajarmeh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 24, "label": "technoveltyco", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 25, "label": "bobwilmes", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 26, "label": "jdietz224", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 27, "label": "il023109", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 28, "label": "yffq", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 29, "label": "nealchau", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 30, "label": "Luciferyzl", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 31, "label": "tattwamasi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 32, "label": "R1NC", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 33, "label": "pkh0104", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 34, "label": "jan-moeller", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 35, "label": "KambizAsadzadeh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 36, "label": "dhmeves", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 37, "label": "TheRealJokerMan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 38, "label": "rossjaywill", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 39, "label": "GiulioPN", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 40, "label": "RaphaelPour", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 41, "label": "rakendrathapa", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 42, "label": "vaananart", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 43, "label": "chear", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 44, "label": "vdudhmal", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 45, "label": "900908", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 46, "label": "fjswhl", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 47, "label": "zhbi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 48, "label": "infiniteway", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 49, "label": "angusHeZZ", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 50, "label": "44zb", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 51, "label": "dahamilt", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 52, "label": "edisona", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 53, "label": "TugayArslan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 54, "label": "ericwat", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 55, "label": "mmfalcao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 56, "label": "lucaskdc", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 57, "label": "jasantunes", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 58, "label": "Fe0437", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 59, "label": "amirouche", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 60, "label": "Emir-Cesovic", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 61, "label": "ImAmelie", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 62, "label": "BofeiCHEN", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 63, "label": "wyfsjtu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 64, "label": "SalHe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 65, "label": "dohi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 66, "label": "Coool", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 67, "label": "soheil-soltani", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 68, "label": "cshreyastech", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 69, "label": "fluentgcc", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 70, "label": "UMUTBAYGUT", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 71, "label": "zhangyy91", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 72, "label": "thatvideoshopguy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 73, "label": "JasonHu1", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 74, "label": "thiagovisk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 75, "label": "hgx1991", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 76, "label": "bsdooby", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 77, "label": "GBoshu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 78, "label": "IGR2014", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 79, "label": "unanwiwo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 80, "label": "kurhula", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 81, "label": "jahands", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 82, "label": "Yang-yongwen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 83, "label": "ant642507com", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 84, "label": "X-Lucifer", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 85, "label": "zhanglei1949", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 86, "label": "KyleGrains", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 87, "label": "augustodamasceno", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 88, "label": "Hel00", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 89, "label": "the-moisrex", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 90, "label": "rajames429", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 91, "label": "feepwang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 92, "label": "shuxiaokai", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 93, "label": "kamiao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 94, "label": "luluman", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 95, "label": "mbs0221", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 96, "label": "modulexcite", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 97, "label": "alansam", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 98, "label": "luismauricioac", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 99, "label": "Parham3679srsr", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 100, "label": "rustyedge", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 101, "label": "songshinyoung", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 102, "label": "aheilesen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 103, "label": "lu-ym", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 104, "label": "JamesChristley", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 105, "label": "pwn0rz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 106, "label": "BrunoProgramming", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 107, "label": "Lmy0217", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 108, "label": "ray-ng", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 109, "label": "ilKurieita", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 110, "label": "ugpass", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 111, "label": "zhangzhg0508", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 112, "label": "SailorLou", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 113, "label": "ionovanton", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 114, "label": "PeC-KAYO", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 115, "label": "asali23", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 116, "label": "mikister", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 117, "label": "liberty1997", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 118, "label": "hundong2", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 119, "label": "rezajax", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 120, "label": "bhsphd", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 121, "label": "maxi91", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 122, "label": "henenkur", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 123, "label": "kerolar", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 124, "label": "ORC-Lee", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 125, "label": "Murplugg", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 126, "label": "aimuch", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 127, "label": "stephenlang84", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 128, "label": "ClarePhang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 129, "label": "beamiter", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 130, "label": "0TemetNosce0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 131, "label": "vic-torr", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 132, "label": "Renz7", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 133, "label": "tang888", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 134, "label": "etavardt", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 135, "label": "SmartAI", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 136, "label": "HeLiangHIT", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 137, "label": "zfarbp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 138, "label": "Atahanak", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 139, "label": "suchaoyong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 140, "label": "abdelhakeem", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 141, "label": "HUSTWillHe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 142, "label": "applicato", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 143, "label": "ZhuoYitao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 144, "label": "doytsujin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 145, "label": "Andreo1111", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 146, "label": "mheriyanto", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 147, "label": "TomGarden", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 148, "label": "simonefinelli", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 149, "label": "hlwhite", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 150, "label": "ucar19", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 151, "label": "flay-boy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 152, "label": "ImQhw", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 153, "label": "LiuErpi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 154, "label": "fondxy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 155, "label": "sgupta38", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 156, "label": "atPalash", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 157, "label": "CCXXXI", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 158, "label": "tychodev321", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 159, "label": "Avithohol", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 160, "label": "nofuns", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 161, "label": "huahaiyu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 162, "label": "Darkstar130", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 163, "label": "AndreyTokmakov", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 164, "label": "yaoxiuyong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 165, "label": "wusatosi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 166, "label": "demidko", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 167, "label": "OswaldXia", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 168, "label": "liangxianlong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 169, "label": "will2055", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 170, "label": "Serenitysmk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 171, "label": "mihirchakma", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 172, "label": "Delta456", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 173, "label": "nzmgng", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 174, "label": "TUGOhost", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 175, "label": "jianjian2017", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 176, "label": "malubian906", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 177, "label": "hasmargaryan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 178, "label": "bluesfly", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 179, "label": "rpzhu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 180, "label": "TheCharmingSociopath", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 181, "label": "ammarshahin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 182, "label": "PrashanthKumar0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 183, "label": "iRobot42", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 184, "label": "vitaminncpp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 185, "label": "pasenchenko", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 186, "label": "ayouroukou", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 187, "label": "eemailme", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 188, "label": "ahmedtaipei", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 189, "label": "willianwu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 190, "label": "omercaylan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 191, "label": "erincercan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 192, "label": "mguarin0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 193, "label": "mihirchakmait", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 194, "label": "felbadry", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 195, "label": "droggeljugLM", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 196, "label": "mtkfleet", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 197, "label": "masx200", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 198, "label": "Eric-Ceray", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 199, "label": "Clickseo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 200, "label": "DrPyy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 201, "label": "glaumar", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 202, "label": "Parinjoy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 203, "label": "sureshvazrala", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 204, "label": "RolandLemmers", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 205, "label": "martensi1", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 206, "label": "shofiqtest", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 207, "label": "aleksandarkoruga", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 208, "label": "jaideraao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 209, "label": "aliist", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 210, "label": "Nahid-Hassan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 211, "label": "jzdotyang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 212, "label": "galliume", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 213, "label": "wxingfu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 214, "label": "KorayMenevse", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 215, "label": "Mosklia", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 216, "label": "mrkormaks", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 217, "label": "informagico", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 218, "label": "emreoztoklu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 219, "label": "fatihatagunn", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 220, "label": "sethome2", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 221, "label": "zEuS0390", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 222, "label": "poonamj03", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 223, "label": "xuuaaannnn", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 224, "label": "LishaUnfoolish", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 225, "label": "iPisces77", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 226, "label": "chris-iapetus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 227, "label": "betamoojw", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 228, "label": "oraqlle", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 229, "label": "BalajiSenege", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 230, "label": "chamip", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 231, "label": "golxzn", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 232, "label": "gartac", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 233, "label": "AgustinBaffo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 234, "label": "hanftins", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 235, "label": "freewillbe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 236, "label": "psotou", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 237, "label": "TaoLu52", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 238, "label": "VoiciehBy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 239, "label": "hakanceran64", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 240, "label": "vivianchiong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 241, "label": "heureka-shanghai", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 242, "label": "noahabe", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 243, "label": "webstorage119", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 244, "label": "anwaralicodes", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 245, "label": "yanggle-yang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 246, "label": "shimmeryang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 247, "label": "love1angel", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 248, "label": "alirezah95", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 249, "label": "ccsuper1024", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 250, "label": "Megamegamium", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 251, "label": "ivaquero", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 252, "label": "yhf98", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 253, "label": "mbarrineau", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 254, "label": "WarnerChang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 255, "label": "Corsair-cxs", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 256, "label": "uzoochogu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 257, "label": "ngquan0304", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 258, "label": "NavidSadat", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 259, "label": "vlady5lav", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 260, "label": "rohansiddhu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 261, "label": "Ningreka", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 262, "label": "sohan110111", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 263, "label": "BlissNathan1305", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 264, "label": "ouyanglujie", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 265, "label": "giyuhwang", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 266, "label": "evilsharkcpp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 267, "label": "ash1j1", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 268, "label": "Orrmj", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 269, "label": "samofoke", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 270, "label": "iamVaidh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 271, "label": "bigLRRH", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 272, "label": "nashorstyle", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 273, "label": "delta-wing", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 274, "label": "sperezrioja", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 275, "label": "sepehr-gharedaghi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 276, "label": "jeoooo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 277, "label": "Inarizakura", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 278, "label": "anyred", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 279, "label": "Ihtier-0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 280, "label": "alexzanderr", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 281, "label": "aidaneastcott", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 282, "label": "AI-Bod", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 283, "label": "rshn1994", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 284, "label": "yangjiahao265", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 285, "label": "KY-Lin22", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 286, "label": "leoa451", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 287, "label": "cheng-hsiang-chiu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 288, "label": "RushinShah22", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 289, "label": "vnlemanhthanh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 290, "label": "EMjoker", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 291, "label": "kalidasrajendran", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 292, "label": "yairfine", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 293, "label": "QinGuodong1287", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 294, "label": "EconMaett", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 295, "label": "CousinMLz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 296, "label": "huangdepeng99", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 297, "label": "jasony2701", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 298, "label": "leejoonhun", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 299, "label": "onimayowa013", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 300, "label": "chuchuroth", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 301, "label": "smeyashka", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 302, "label": "Hycity-sta", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 303, "label": "hopkins516", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 304, "label": "HemanthB03", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 305, "label": "LinchpinX", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 306, "label": "6d61726b", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 307, "label": "Thilak-KN", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 308, "label": "nickocruzm", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 309, "label": "anoopksharma22", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 310, "label": "jan-revay", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 311, "label": "alekssze", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 312, "label": "LuthienTinuvielShouko", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 313, "label": "MhmudAbdGhafar", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 314, "label": "LS-Hower", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 315, "label": "vytrhlikm", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 316, "label": "Nuurik", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 317, "label": "lyrick17", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 318, "label": "SamuelxMiao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 319, "label": "rahitashpaul", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 320, "label": "mr-dave-lister", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 321, "label": "zLimbo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 322, "label": "bewflast", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 323, "label": "rafidalhaque", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 324, "label": "tolgabp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 325, "label": "Oureyelet", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 326, "label": "Mohammed4mach", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 327, "label": "thegoodscientist", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 328, "label": "TanvirApon", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 329, "label": "Yuri-Santiago", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 330, "label": "loser-linker", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 331, "label": "yinloonga", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 332, "label": "zhuoqun-chen", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 333, "label": "lizat-i", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 334, "label": "daleksla", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 335, "label": "falke327", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 336, "label": "davcasf", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 337, "label": "KenoChou", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 338, "label": "david-gmz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 339, "label": "piedpiper101", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 340, "label": "DazeZzz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 341, "label": "ShelbyWong", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 342, "label": "alxrios", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 343, "label": "pumpbumb", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 344, "label": "halidaslan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 345, "label": "Cascian08", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 346, "label": "mnfitz-ASU", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 347, "label": "birdman113", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 348, "label": "janefreew", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 349, "label": "MichaelAgarkov", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 350, "label": "hsouna7", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 351, "label": "GothicLoli", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 352, "label": "hglong16", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 353, "label": "welam73", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 354, "label": "helloUmu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 355, "label": "peravali0812", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 356, "label": "SzopuCpp", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 357, "label": "jacky0115", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 358, "label": "Esteban-Coding", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 359, "label": "Andrei-Paval", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 360, "label": "bitsphere01", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 361, "label": "ycosystem", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 362, "label": "XiaoyangLiu1995", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 363, "label": "riclan", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 364, "label": "mrityunjay-39k", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 365, "label": "sunghyouk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 366, "label": "mtiftikci", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 367, "label": "saahu27", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 368, "label": "daitanbui", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 369, "label": "Tarek-Ali2000", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 370, "label": "frabervo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 371, "label": "chenzufei", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 372, "label": "bemarchant", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 373, "label": "mamadjadali", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 374, "label": "ztao2010", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 375, "label": "duyu09", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 376, "label": "camdenmcgath", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 377, "label": "FengChenHUSTUM", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 378, "label": "Numidia27", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 379, "label": "nur-azhar", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 380, "label": "mrlegohead0x45", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 381, "label": "Sergioepoi", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 382, "label": "vioana", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 383, "label": "baoivy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 384, "label": "itstarsoft", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 385, "label": "ikshvaku01", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 386, "label": "yb2462", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 387, "label": "timothyyeo7", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 388, "label": "falloutats", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 389, "label": "erdifk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 390, "label": "Keron-Dev", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 391, "label": "samkenxstream", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 392, "label": "ecetinturk", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 393, "label": "Tendacia", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 394, "label": "Smilyf", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 395, "label": "som-ansh", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 396, "label": "Steve4Space", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 397, "label": "lovecjiayao", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 398, "label": "atif-h", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 399, "label": "skyuzadv", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 400, "label": "dptechinfo", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 401, "label": "flumpus-dev", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 402, "label": "1londonrus", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 403, "label": "YuNkOnG2022", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 404, "label": "Szym0n96", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 405, "label": "ahall18-uvm", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 406, "label": "boatloader", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 407, "label": "IndieMinimalist", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 408, "label": "n-tranced", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 409, "label": "ABOU-BAKR-BENZ", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 410, "label": "AlbertoO8", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 411, "label": "amrhonin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 412, "label": "Hemanth3303", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 413, "label": "tarslan-jci", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 414, "label": "edorejel", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 415, "label": "rmanaloto-tastytrade", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 416, "label": "allaboutevemirolive", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 417, "label": "froggyn0ir", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 418, "label": "bddlr11", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 419, "label": "fejo-git", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 420, "label": "codespiracy", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 421, "label": "vijaykumarsoni23488", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 422, "label": "skaiana", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 423, "label": "bevyzcodes", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 424, "label": "Pikarabbit", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 425, "label": "yassineelaissaoui956", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 426, "label": "firefly-yrdsb", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 427, "label": "yishak-cs", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 428, "label": "master-lame-master", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 429, "label": "kamran2malik4", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 430, "label": "SakshamUmate", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 431, "label": "Unknown-Stryker", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 432, "label": "JusticePage", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 433, "label": "freddycodes23", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 434, "label": "JacobOgle", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 435, "label": "ctzerz", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 436, "label": "ortanaV2", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 437, "label": "xhe-spirent", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 438, "label": "EdouardDevriese", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 439, "label": "bababermudaa", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 440, "label": "albizago", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 441, "label": "athn0", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 442, "label": "madruon", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 443, "label": "M-DinhHoangViet", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 444, "label": "LHNam756", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 445, "label": "Hollurose", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 446, "label": "gssgsjdjdhdhshss", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 447, "label": "voxet1n3", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": 448, "label": "isocpp", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"from": 0, "to": 1, "width": 1}, {"from": 1, "to": 2, "width": 1}, {"from": 1, "to": 3, "width": 1}, {"from": 1, "to": 4, "width": 1}, {"from": 1, "to": 5, "width": 1}, {"from": 1, "to": 6, "width": 1}, {"from": 1, "to": 7, "width": 1}, {"from": 1, "to": 8, "width": 1}, {"from": 1, "to": 9, "width": 1}, {"from": 1, "to": 10, "width": 1}, {"from": 1, "to": 11, "width": 1}, {"from": 1, "to": 12, "width": 1}, {"from": 1, "to": 13, "width": 1}, {"from": 1, "to": 14, "width": 1}, {"from": 1, "to": 15, "width": 1}, {"from": 1, "to": 16, "width": 1}, {"from": 1, "to": 17, "width": 1}, {"from": 1, "to": 18, "width": 1}, {"from": 1, "to": 19, "width": 1}, {"from": 1, "to": 20, "width": 1}, {"from": 1, "to": 21, "width": 1}, {"from": 1, "to": 22, "width": 1}, {"from": 1, "to": 23, "width": 1}, {"from": 1, "to": 24, "width": 1}, {"from": 1, "to": 25, "width": 1}, {"from": 1, "to": 26, "width": 1}, {"from": 1, "to": 27, "width": 1}, {"from": 1, "to": 28, "width": 1}, {"from": 1, "to": 29, "width": 1}, {"from": 1, "to": 30, "width": 1}, {"from": 1, "to": 31, "width": 1}, {"from": 1, "to": 32, "width": 1}, {"from": 1, "to": 33, "width": 1}, {"from": 1, "to": 34, "width": 1}, {"from": 1, "to": 35, "width": 1}, {"from": 1, "to": 36, "width": 1}, {"from": 1, "to": 37, "width": 1}, {"from": 1, "to": 38, "width": 1}, {"from": 1, "to": 39, "width": 1}, {"from": 1, "to": 40, "width": 1}, {"from": 1, "to": 41, "width": 1}, {"from": 1, "to": 42, "width": 1}, {"from": 1, "to": 43, "width": 1}, {"from": 1, "to": 44, "width": 1}, {"from": 1, "to": 45, "width": 1}, {"from": 1, "to": 46, "width": 1}, {"from": 1, "to": 47, "width": 1}, {"from": 1, "to": 48, "width": 1}, {"from": 1, "to": 49, "width": 1}, {"from": 1, "to": 50, "width": 1}, {"from": 1, "to": 51, "width": 1}, {"from": 1, "to": 52, "width": 1}, {"from": 1, "to": 53, "width": 1}, {"from": 1, "to": 54, "width": 1}, {"from": 1, "to": 55, "width": 1}, {"from": 1, "to": 56, "width": 1}, {"from": 1, "to": 57, "width": 1}, {"from": 1, "to": 58, "width": 1}, {"from": 1, "to": 59, "width": 1}, {"from": 1, "to": 60, "width": 1}, {"from": 1, "to": 61, "width": 1}, {"from": 1, "to": 62, "width": 1}, {"from": 1, "to": 63, "width": 1}, {"from": 1, "to": 64, "width": 1}, {"from": 1, "to": 65, "width": 1}, {"from": 1, "to": 66, "width": 1}, {"from": 1, "to": 67, "width": 1}, {"from": 1, "to": 68, "width": 1}, {"from": 1, "to": 69, "width": 1}, {"from": 1, "to": 70, "width": 1}, {"from": 1, "to": 71, "width": 1}, {"from": 1, "to": 72, "width": 1}, {"from": 1, "to": 73, "width": 1}, {"from": 1, "to": 74, "width": 1}, {"from": 1, "to": 75, "width": 1}, {"from": 1, "to": 76, "width": 1}, {"from": 1, "to": 77, "width": 1}, {"from": 1, "to": 78, "width": 1}, {"from": 1, "to": 79, "width": 1}, {"from": 1, "to": 80, "width": 1}, {"from": 1, "to": 81, "width": 1}, {"from": 1, "to": 82, "width": 1}, {"from": 1, "to": 83, "width": 1}, {"from": 1, "to": 84, "width": 1}, {"from": 1, "to": 85, "width": 1}, {"from": 1, "to": 86, "width": 1}, {"from": 1, "to": 87, "width": 1}, {"from": 1, "to": 88, "width": 1}, {"from": 1, "to": 89, "width": 1}, {"from": 1, "to": 90, "width": 1}, {"from": 1, "to": 91, "width": 1}, {"from": 1, "to": 92, "width": 1}, {"from": 1, "to": 93, "width": 1}, {"from": 1, "to": 94, "width": 1}, {"from": 1, "to": 95, "width": 1}, {"from": 1, "to": 96, "width": 1}, {"from": 1, "to": 97, "width": 1}, {"from": 1, "to": 98, "width": 1}, {"from": 1, "to": 99, "width": 1}, {"from": 1, "to": 100, "width": 1}, {"from": 1, "to": 101, "width": 1}, {"from": 1, "to": 102, "width": 1}, {"from": 1, "to": 103, "width": 1}, {"from": 1, "to": 104, "width": 1}, {"from": 1, "to": 105, "width": 1}, {"from": 1, "to": 106, "width": 1}, {"from": 1, "to": 107, "width": 1}, {"from": 1, "to": 108, "width": 1}, {"from": 1, "to": 109, "width": 1}, {"from": 1, "to": 110, "width": 1}, {"from": 1, "to": 111, "width": 1}, {"from": 1, "to": 112, "width": 1}, {"from": 1, "to": 113, "width": 1}, {"from": 1, "to": 114, "width": 1}, {"from": 1, "to": 115, "width": 1}, {"from": 1, "to": 116, "width": 1}, {"from": 1, "to": 117, "width": 1}, {"from": 1, "to": 118, "width": 1}, {"from": 1, "to": 119, "width": 1}, {"from": 1, "to": 120, "width": 1}, {"from": 1, "to": 121, "width": 1}, {"from": 1, "to": 122, "width": 1}, {"from": 1, "to": 123, "width": 1}, {"from": 1, "to": 124, "width": 1}, {"from": 1, "to": 125, "width": 1}, {"from": 1, "to": 126, "width": 1}, {"from": 1, "to": 127, "width": 1}, {"from": 1, "to": 128, "width": 1}, {"from": 1, "to": 129, "width": 1}, {"from": 1, "to": 130, "width": 1}, {"from": 1, "to": 131, "width": 1}, {"from": 1, "to": 132, "width": 1}, {"from": 1, "to": 133, "width": 1}, {"from": 1, "to": 134, "width": 1}, {"from": 1, "to": 135, "width": 1}, {"from": 1, "to": 136, "width": 1}, {"from": 1, "to": 137, "width": 1}, {"from": 1, "to": 138, "width": 1}, {"from": 1, "to": 139, "width": 1}, {"from": 1, "to": 140, "width": 1}, {"from": 1, "to": 141, "width": 1}, {"from": 1, "to": 142, "width": 1}, {"from": 1, "to": 143, "width": 1}, {"from": 1, "to": 144, "width": 1}, {"from": 1, "to": 145, "width": 1}, {"from": 1, "to": 146, "width": 1}, {"from": 1, "to": 147, "width": 1}, {"from": 1, "to": 148, "width": 1}, {"from": 1, "to": 149, "width": 1}, {"from": 1, "to": 150, "width": 1}, {"from": 1, "to": 151, "width": 1}, {"from": 1, "to": 152, "width": 1}, {"from": 1, "to": 153, "width": 1}, {"from": 1, "to": 154, "width": 1}, {"from": 1, "to": 155, "width": 1}, {"from": 1, "to": 156, "width": 1}, {"from": 1, "to": 157, "width": 1}, {"from": 1, "to": 158, "width": 1}, {"from": 1, "to": 159, "width": 1}, {"from": 1, "to": 160, "width": 1}, {"from": 1, "to": 161, "width": 1}, {"from": 1, "to": 162, "width": 1}, {"from": 1, "to": 163, "width": 1}, {"from": 1, "to": 164, "width": 1}, {"from": 1, "to": 165, "width": 1}, {"from": 1, "to": 166, "width": 1}, {"from": 1, "to": 167, "width": 1}, {"from": 1, "to": 168, "width": 1}, {"from": 1, "to": 169, "width": 1}, {"from": 1, "to": 170, "width": 1}, {"from": 1, "to": 171, "width": 1}, {"from": 1, "to": 172, "width": 1}, {"from": 1, "to": 173, "width": 1}, {"from": 1, "to": 174, "width": 1}, {"from": 1, "to": 175, "width": 1}, {"from": 1, "to": 176, "width": 1}, {"from": 1, "to": 177, "width": 1}, {"from": 1, "to": 178, "width": 1}, {"from": 1, "to": 179, "width": 1}, {"from": 1, "to": 180, "width": 1}, {"from": 1, "to": 181, "width": 1}, {"from": 1, "to": 182, "width": 1}, {"from": 1, "to": 183, "width": 1}, {"from": 1, "to": 184, "width": 1}, {"from": 1, "to": 185, "width": 1}, {"from": 1, "to": 186, "width": 1}, {"from": 1, "to": 187, "width": 1}, {"from": 1, "to": 188, "width": 1}, {"from": 1, "to": 189, "width": 1}, {"from": 1, "to": 190, "width": 1}, {"from": 1, "to": 191, "width": 1}, {"from": 1, "to": 192, "width": 1}, {"from": 1, "to": 193, "width": 1}, {"from": 1, "to": 194, "width": 1}, {"from": 1, "to": 195, "width": 1}, {"from": 1, "to": 196, "width": 1}, {"from": 1, "to": 197, "width": 1}, {"from": 1, "to": 198, "width": 1}, {"from": 1, "to": 199, "width": 1}, {"from": 1, "to": 200, "width": 1}, {"from": 1, "to": 201, "width": 1}, {"from": 1, "to": 202, "width": 1}, {"from": 1, "to": 203, "width": 1}, {"from": 1, "to": 204, "width": 1}, {"from": 1, "to": 205, "width": 1}, {"from": 1, "to": 206, "width": 1}, {"from": 1, "to": 207, "width": 1}, {"from": 1, "to": 208, "width": 1}, {"from": 1, "to": 209, "width": 1}, {"from": 1, "to": 210, "width": 1}, {"from": 1, "to": 211, "width": 1}, {"from": 1, "to": 212, "width": 1}, {"from": 1, "to": 213, "width": 1}, {"from": 1, "to": 214, "width": 1}, {"from": 1, "to": 215, "width": 1}, {"from": 1, "to": 216, "width": 1}, {"from": 1, "to": 217, "width": 1}, {"from": 1, "to": 218, "width": 1}, {"from": 1, "to": 219, "width": 1}, {"from": 1, "to": 220, "width": 1}, {"from": 1, "to": 221, "width": 1}, {"from": 1, "to": 222, "width": 1}, {"from": 1, "to": 223, "width": 1}, {"from": 1, "to": 224, "width": 1}, {"from": 1, "to": 225, "width": 1}, {"from": 1, "to": 226, "width": 1}, {"from": 1, "to": 227, "width": 1}, {"from": 1, "to": 228, "width": 1}, {"from": 1, "to": 229, "width": 1}, {"from": 1, "to": 230, "width": 1}, {"from": 1, "to": 231, "width": 1}, {"from": 1, "to": 232, "width": 1}, {"from": 1, "to": 233, "width": 1}, {"from": 1, "to": 234, "width": 1}, {"from": 1, "to": 235, "width": 1}, {"from": 1, "to": 236, "width": 1}, {"from": 1, "to": 237, "width": 1}, {"from": 1, "to": 238, "width": 1}, {"from": 1, "to": 239, "width": 1}, {"from": 1, "to": 240, "width": 1}, {"from": 1, "to": 241, "width": 1}, {"from": 1, "to": 242, "width": 1}, {"from": 1, "to": 243, "width": 1}, {"from": 1, "to": 244, "width": 1}, {"from": 1, "to": 245, "width": 1}, {"from": 1, "to": 246, "width": 1}, {"from": 1, "to": 247, "width": 1}, {"from": 1, "to": 248, "width": 1}, {"from": 1, "to": 249, "width": 1}, {"from": 1, "to": 250, "width": 1}, {"from": 1, "to": 251, "width": 1}, {"from": 1, "to": 252, "width": 1}, {"from": 1, "to": 253, "width": 1}, {"from": 1, "to": 254, "width": 1}, {"from": 1, "to": 255, "width": 1}, {"from": 1, "to": 256, "width": 1}, {"from": 1, "to": 257, "width": 1}, {"from": 1, "to": 258, "width": 1}, {"from": 1, "to": 259, "width": 1}, {"from": 1, "to": 260, "width": 1}, {"from": 1, "to": 261, "width": 1}, {"from": 1, "to": 262, "width": 1}, {"from": 1, "to": 263, "width": 1}, {"from": 1, "to": 264, "width": 1}, {"from": 1, "to": 265, "width": 1}, {"from": 1, "to": 266, "width": 1}, {"from": 1, "to": 267, "width": 1}, {"from": 1, "to": 268, "width": 1}, {"from": 1, "to": 269, "width": 1}, {"from": 1, "to": 270, "width": 1}, {"from": 1, "to": 271, "width": 1}, {"from": 1, "to": 272, "width": 1}, {"from": 1, "to": 273, "width": 1}, {"from": 1, "to": 274, "width": 1}, {"from": 1, "to": 275, "width": 1}, {"from": 1, "to": 276, "width": 1}, {"from": 1, "to": 277, "width": 1}, {"from": 1, "to": 278, "width": 1}, {"from": 1, "to": 279, "width": 1}, {"from": 1, "to": 280, "width": 1}, {"from": 1, "to": 281, "width": 1}, {"from": 1, "to": 282, "width": 1}, {"from": 1, "to": 283, "width": 1}, {"from": 1, "to": 284, "width": 1}, {"from": 1, "to": 285, "width": 1}, {"from": 1, "to": 286, "width": 1}, {"from": 1, "to": 287, "width": 1}, {"from": 1, "to": 288, "width": 1}, {"from": 1, "to": 289, "width": 1}, {"from": 1, "to": 290, "width": 1}, {"from": 1, "to": 291, "width": 1}, {"from": 1, "to": 292, "width": 1}, {"from": 1, "to": 293, "width": 1}, {"from": 1, "to": 294, "width": 1}, {"from": 1, "to": 295, "width": 1}, {"from": 1, "to": 296, "width": 1}, {"from": 1, "to": 297, "width": 1}, {"from": 1, "to": 298, "width": 1}, {"from": 1, "to": 299, "width": 1}, {"from": 1, "to": 300, "width": 1}, {"from": 1, "to": 301, "width": 1}, {"from": 1, "to": 302, "width": 1}, {"from": 1, "to": 303, "width": 1}, {"from": 1, "to": 304, "width": 1}, {"from": 1, "to": 305, "width": 1}, {"from": 1, "to": 306, "width": 1}, {"from": 1, "to": 307, "width": 1}, {"from": 1, "to": 308, "width": 1}, {"from": 1, "to": 309, "width": 1}, {"from": 1, "to": 310, "width": 1}, {"from": 1, "to": 311, "width": 1}, {"from": 1, "to": 312, "width": 1}, {"from": 1, "to": 313, "width": 1}, {"from": 1, "to": 314, "width": 1}, {"from": 1, "to": 315, "width": 1}, {"from": 1, "to": 316, "width": 1}, {"from": 1, "to": 317, "width": 1}, {"from": 1, "to": 318, "width": 1}, {"from": 1, "to": 319, "width": 1}, {"from": 1, "to": 320, "width": 1}, {"from": 1, "to": 321, "width": 1}, {"from": 1, "to": 322, "width": 1}, {"from": 1, "to": 323, "width": 1}, {"from": 1, "to": 324, "width": 1}, {"from": 1, "to": 325, "width": 1}, {"from": 1, "to": 326, "width": 1}, {"from": 1, "to": 327, "width": 1}, {"from": 1, "to": 328, "width": 1}, {"from": 1, "to": 329, "width": 1}, {"from": 1, "to": 330, "width": 1}, {"from": 1, "to": 331, "width": 1}, {"from": 1, "to": 332, "width": 1}, {"from": 1, "to": 333, "width": 1}, {"from": 1, "to": 334, "width": 1}, {"from": 1, "to": 335, "width": 1}, {"from": 1, "to": 336, "width": 1}, {"from": 1, "to": 337, "width": 1}, {"from": 1, "to": 338, "width": 1}, {"from": 1, "to": 339, "width": 1}, {"from": 1, "to": 340, "width": 1}, {"from": 1, "to": 341, "width": 1}, {"from": 1, "to": 342, "width": 1}, {"from": 1, "to": 343, "width": 1}, {"from": 1, "to": 344, "width": 1}, {"from": 1, "to": 345, "width": 1}, {"from": 1, "to": 346, "width": 1}, {"from": 1, "to": 347, "width": 1}, {"from": 1, "to": 348, "width": 1}, {"from": 1, "to": 349, "width": 1}, {"from": 1, "to": 350, "width": 1}, {"from": 1, "to": 351, "width": 1}, {"from": 1, "to": 352, "width": 1}, {"from": 1, "to": 353, "width": 1}, {"from": 1, "to": 354, "width": 1}, {"from": 1, "to": 355, "width": 1}, {"from": 1, "to": 356, "width": 1}, {"from": 1, "to": 357, "width": 1}, {"from": 1, "to": 358, "width": 1}, {"from": 1, "to": 359, "width": 1}, {"from": 1, "to": 360, "width": 1}, {"from": 1, "to": 361, "width": 1}, {"from": 1, "to": 362, "width": 1}, {"from": 1, "to": 363, "width": 1}, {"from": 1, "to": 364, "width": 1}, {"from": 1, "to": 365, "width": 1}, {"from": 1, "to": 366, "width": 1}, {"from": 1, "to": 367, "width": 1}, {"from": 1, "to": 368, "width": 1}, {"from": 1, "to": 369, "width": 1}, {"from": 1, "to": 370, "width": 1}, {"from": 1, "to": 371, "width": 1}, {"from": 1, "to": 372, "width": 1}, {"from": 1, "to": 373, "width": 1}, {"from": 1, "to": 374, "width": 1}, {"from": 1, "to": 375, "width": 1}, {"from": 1, "to": 376, "width": 1}, {"from": 1, "to": 377, "width": 1}, {"from": 1, "to": 378, "width": 1}, {"from": 1, "to": 379, "width": 1}, {"from": 1, "to": 380, "width": 1}, {"from": 1, "to": 381, "width": 1}, {"from": 1, "to": 382, "width": 1}, {"from": 1, "to": 383, "width": 1}, {"from": 1, "to": 384, "width": 1}, {"from": 1, "to": 385, "width": 1}, {"from": 1, "to": 386, "width": 1}, {"from": 1, "to": 387, "width": 1}, {"from": 1, "to": 388, "width": 1}, {"from": 1, "to": 389, "width": 1}, {"from": 1, "to": 390, "width": 1}, {"from": 1, "to": 391, "width": 1}, {"from": 1, "to": 392, "width": 1}, {"from": 1, "to": 393, "width": 1}, {"from": 1, "to": 394, "width": 1}, {"from": 1, "to": 395, "width": 1}, {"from": 1, "to": 396, "width": 1}, {"from": 1, "to": 397, "width": 1}, {"from": 1, "to": 398, "width": 1}, {"from": 1, "to": 399, "width": 1}, {"from": 1, "to": 400, "width": 1}, {"from": 1, "to": 401, "width": 1}, {"from": 1, "to": 402, "width": 1}, {"from": 1, "to": 403, "width": 1}, {"from": 1, "to": 404, "width": 1}, {"from": 1, "to": 405, "width": 1}, {"from": 1, "to": 406, "width": 1}, {"from": 1, "to": 407, "width": 1}, {"from": 1, "to": 408, "width": 1}, {"from": 1, "to": 409, "width": 1}, {"from": 1, "to": 410, "width": 1}, {"from": 1, "to": 411, "width": 1}, {"from": 1, "to": 412, "width": 1}, {"from": 1, "to": 413, "width": 1}, {"from": 1, "to": 414, "width": 1}, {"from": 1, "to": 415, "width": 1}, {"from": 1, "to": 416, "width": 1}, {"from": 1, "to": 417, "width": 1}, {"from": 1, "to": 418, "width": 1}, {"from": 1, "to": 419, "width": 1}, {"from": 1, "to": 420, "width": 1}, {"from": 1, "to": 421, "width": 1}, {"from": 1, "to": 422, "width": 1}, {"from": 1, "to": 423, "width": 1}, {"from": 1, "to": 424, "width": 1}, {"from": 1, "to": 425, "width": 1}, {"from": 1, "to": 426, "width": 1}, {"from": 1, "to": 427, "width": 1}, {"from": 1, "to": 428, "width": 1}, {"from": 1, "to": 429, "width": 1}, {"from": 1, "to": 430, "width": 1}, {"from": 1, "to": 431, "width": 1}, {"from": 1, "to": 432, "width": 1}, {"from": 1, "to": 433, "width": 1}, {"from": 1, "to": 434, "width": 1}, {"from": 1, "to": 435, "width": 1}, {"from": 1, "to": 436, "width": 1}, {"from": 1, "to": 437, "width": 1}, {"from": 1, "to": 438, "width": 1}, {"from": 1, "to": 439, "width": 1}, {"from": 1, "to": 440, "width": 1}, {"from": 1, "to": 441, "width": 1}, {"from": 1, "to": 442, "width": 1}, {"from": 1, "to": 443, "width": 1}, {"from": 1, "to": 444, "width": 1}, {"from": 1, "to": 445, "width": 1}, {"from": 1, "to": 446, "width": 1}, {"from": 1, "to": 447, "width": 1}, {"from": 1, "to": 448, "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          document.getElementById('loadingBar').removeAttribute("style");
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+                          document.getElementById('loadingBar').style.opacity = 0;
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
