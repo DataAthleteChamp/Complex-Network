@@ -1,0 +1,182 @@
+[
+    {
+        "review": "It’s nothing I didn’t dislike I loved it",
+        "sentiment": {
+            "neg": 0.337,
+            "neu": 0.429,
+            "pos": 0.234,
+            "compound": -0.2411
+        }
+    },
+    {
+        "review": "Good adaptation of the book. Missing some detail but you can’t make a 14hr movie.",
+        "sentiment": {
+            "neg": 0.103,
+            "neu": 0.772,
+            "pos": 0.125,
+            "compound": 0.09
+        }
+    },
+    {
+        "review": "How many times can they say her name",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 1.0,
+            "pos": 0.0,
+            "compound": 0.0
+        }
+    },
+    {
+        "review": "Should’ve been split into two movies",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 1.0,
+            "pos": 0.0,
+            "compound": 0.0
+        }
+    },
+    {
+        "review": "Really good acting makes this movie a good one!   Viola Davis was amazing as was the actor who played Snow.  The snakes were a little fake but it worked.",
+        "sentiment": {
+            "neg": 0.059,
+            "neu": 0.677,
+            "pos": 0.264,
+            "compound": 0.689
+        }
+    },
+    {
+        "review": "Loved it! I hope there r more hinger games movie in the future 🥲🥹",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 0.585,
+            "pos": 0.415,
+            "compound": 0.7959
+        }
+    },
+    {
+        "review": "Absolutely Mind Blown",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 1.0,
+            "pos": 0.0,
+            "compound": 0.0
+        }
+    },
+    {
+        "review": "A good continuation of the series. I liked it.",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 0.467,
+            "pos": 0.533,
+            "compound": 0.6908
+        }
+    },
+    {
+        "review": "snow was a hottie and sejanus was a cutie. lucy gray had a nice voice too. justice for reaper, coral, wovey. love lucky flickerman",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 0.505,
+            "pos": 0.495,
+            "compound": 0.9403
+        }
+    },
+    {
+        "review": "Very good movie. It was a little slow in a few spots, but it definitely told a good story",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 0.567,
+            "pos": 0.433,
+            "compound": 0.8731
+        }
+    },
+    {
+        "review": "Absolutely phenomenal story once you get past Hunger Games act",
+        "sentiment": {
+            "neg": 0.182,
+            "neu": 0.818,
+            "pos": 0.0,
+            "compound": -0.25
+        }
+    },
+    {
+        "review": "Sophomoric and a lot of songs as time fillers.",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 1.0,
+            "pos": 0.0,
+            "compound": 0.0
+        }
+    },
+    {
+        "review": "Phenomenal! I want more!",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 0.515,
+            "pos": 0.485,
+            "compound": 0.2225
+        }
+    },
+    {
+        "review": "Fans of the Hunger Games saga will appreciate this prequel. Peter Dinklage is brilliant and the story lays the groundwork for young Katniss to take on Governor Snow in the future.",
+        "sentiment": {
+            "neg": 0.055,
+            "neu": 0.767,
+            "pos": 0.178,
+            "compound": 0.6705
+        }
+    },
+    {
+        "review": "Hunger games part was a little dragged out and got boring but the rest of the story was great and the game maker was the best actor in the movie!",
+        "sentiment": {
+            "neg": 0.079,
+            "neu": 0.601,
+            "pos": 0.32,
+            "compound": 0.9125
+        }
+    },
+    {
+        "review": "loved this and how the storyline is now open for more movies",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 0.738,
+            "pos": 0.262,
+            "compound": 0.5994
+        }
+    },
+    {
+        "review": "I loved this movie! Second time watching. After the first I HAD to read the book and that only made me want to watch it a second time! Love the chemistry between actors.",
+        "sentiment": {
+            "neg": 0.0,
+            "neu": 0.73,
+            "pos": 0.27,
+            "compound": 0.8745
+        }
+    },
+    {
+        "review": "I’m simply shocked out how incredible this movie was. So many references to the first 3, so many questions to answer, and so much of the past being unveiled. Will be watching again very soon.",
+        "sentiment": {
+            "neg": 0.063,
+            "neu": 0.937,
+            "pos": 0.0,
+            "compound": -0.3182
+        }
+    },
+    {
+        "review": "Definitely watch Mocking Jay before going to see this. Great acting and special effects very convincing story line.",
+        "sentiment": {
+            "neg": 0.093,
+            "neu": 0.449,
+            "pos": 0.458,
+            "compound": 0.8902
+        }
+    },
+    {
+        "review": "Awesome movie I now know why President Snow was a jerk",
+        "sentiment": {
+            "neg": 0.178,
+            "neu": 0.519,
+            "pos": 0.304,
+            "compound": 0.4019
+        }
+    }
+]
