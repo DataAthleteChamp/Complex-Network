@@ -1,0 +1,70 @@
+Iteracja 1:
+Liczba wezlow: 1101
+Liczba krawedzi: 1640
+Srednia dlugosc krawedzi: 99.56 m
+Wspolczynnik grupowania: 0.10
+Gestosc sieci: 0.002708
+Najwieksza centralnosc stopnia: 165109460 (0.00)
+Najwieksza centralnosc posrednictwa: 185460602 (0.20)
+Najwieksza centralnosc bliskosci: 185460602 (0.07)
+
+Iteracja 2:
+Liczba wezlow: 2937
+Liczba krawedzi: 4264
+Srednia dlugosc krawedzi: 116.77 m
+Wspolczynnik grupowania: 0.08
+Gestosc sieci: 0.000989
+Najwieksza centralnosc stopnia: 151024797 (0.00)
+Najwieksza centralnosc posrednictwa: 165109863 (0.21)
+Najwieksza centralnosc bliskosci: 1986129367 (0.04)
+
+Iteracja 3:
+Liczba wezlow: 5070
+Liczba krawedzi: 7148
+Srednia dlugosc krawedzi: 123.43 m
+Wspolczynnik grupowania: 0.08
+Gestosc sieci: 0.000556
+Najwieksza centralnosc stopnia: 246689878 (0.00)
+Najwieksza centralnosc posrednictwa: 151334687 (0.18)
+Najwieksza centralnosc bliskosci: 1986129367 (0.03)
+
+Iteracja 4:
+Liczba wezlow: 6956
+Liczba krawedzi: 9559
+Srednia dlugosc krawedzi: 138.73 m
+Wspolczynnik grupowania: 0.08
+Gestosc sieci: 0.000395
+Najwieksza centralnosc stopnia: 246689878 (0.00)
+Najwieksza centralnosc posrednictwa: 158719837 (0.15)
+Najwieksza centralnosc bliskosci: 158171845 (0.03)
+
+Iteracja 5:
+Liczba wezlow: 9305
+Liczba krawedzi: 12448
+Srednia dlugosc krawedzi: 144.58 m
+Wspolczynnik grupowania: 0.07
+Gestosc sieci: 0.000288
+Najwieksza centralnosc stopnia: 246689878 (0.00)
+Najwieksza centralnosc posrednictwa: 1419849881 (0.14)
+Najwieksza centralnosc bliskosci: 1366035583 (0.03)
+
+Iteracja 6:
+Liczba wezlow: 11161
+Liczba krawedzi: 14716
+Srednia dlugosc krawedzi: 151.70 m
+Wspolczynnik grupowania: 0.06
+Gestosc sieci: 0.000236
+Najwieksza centralnosc stopnia: 246689878 (0.00)
+Najwieksza centralnosc posrednictwa: 1419849881 (0.15)
+Najwieksza centralnosc bliskosci: 1366035583 (0.03)
+
+Iteracja 7:
+Liczba wezlow: 12715
+Liczba krawedzi: 16562
+Srednia dlugosc krawedzi: 160.51 m
+Wspolczynnik grupowania: 0.06
+Gestosc sieci: 0.000205
+Najwieksza centralnosc stopnia: 246689878 (0.00)
+Najwieksza centralnosc posrednictwa: 9214313612 (0.17)
+Najwieksza centralnosc bliskosci: 1273299424 (0.03)
+
